@@ -2,8 +2,6 @@
 
 **Optic Radiation Tracking and Retinotopic Segmentation** — a reproducible pipeline for tractography and eccentricity-based segmentation of the human optic radiation using population receptive field (pRF) mapping.
 
-> The name `track` refers to *tracking* (tractography), not the optic tract.
-
 ---
 
 ## Pipeline
