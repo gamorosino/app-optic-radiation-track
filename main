@@ -1,0 +1,77 @@
+#!/bin/bash
+set -e
+
+FIVETT=$(jq -r '.fivett // empty' config.json)
+TRACTOGRAM=$(jq -r '.tractogram // empty' config.json)
+T1=$(jq -r '.t1' config.json)
+FREESURFER=$(jq -r '.freesurfer' config.json)
+NTHREADS=$(jq -r '.nthreads // 1' config.json)
+FORCE=$(jq -r '.force // false' config.json)
+LGN_LH=$(jq -r '.lgn_lh // empty' config.json)
+
+# Auto-run thalamic nuclei segmentation if LGN ROIs are not provided
+if [ -z "$LGN_LH" ]; then
+    THAL_MGZ="${FREESURFER}/mri/ThalamicNuclei.v12.T1.FSvoxelSpace.mgz"
+    if [ ! -f "$THAL_MGZ" ] || [ "$FORCE" == "true" ]; then
+        echo "[main] ThalamicNuclei.v12.T1.FSvoxelSpace.mgz not found — running segmentThalamicNuclei.sh"
+        [ -z "$FREESURFER_LICENSE" ] && echo "[ERROR] FREESURFER_LICENSE env var not set" && exit 1
+        cat "$FREESURFER_LICENSE" > license.txt
+        mkdir -p work/freesurfer_subject
+        cp -R "${FREESURFER}"/* work/freesurfer_subject/
+        singularity exec -e \
+            --bind "$(pwd)/license.txt:/usr/local/freesurfer/license.txt" \
+            --bind "$(pwd)":/app \
+            --pwd /app \
+            docker://brainlife/freesurfer:7.1.0 \
+            bash -c "SUBJECTS_DIR=/app/work segmentThalamicNuclei.sh freesurfer_subject /app/work"
+        # Copy the result back into the freesurfer directory
+        cp work/freesurfer_subject/mri/ThalamicNuclei.v12.T1.FSvoxelSpace.mgz \
+           "${FREESURFER}/mri/ThalamicNuclei.v12.T1.FSvoxelSpace.mgz"
+        echo "[main] Thalamic nuclei segmentation done"
+    else
+        echo "[main] ThalamicNuclei.v12.T1.FSvoxelSpace.mgz found — skipping segmentation"
+    fi
+fi
+
+# 5TT is not needed in tractogram mode (no ACT tracking)
+if [ -z "$TRACTOGRAM" ]; then
+    if [ -z "$FIVETT" ] || [ "$FORCE" == "true" ]; then
+        if [ -f "5tt/5tt.nii.gz" ] && [ "$FORCE" != "true" ]; then
+            echo "[main] Skipping 5ttgen (5tt/5tt.nii.gz exists)"
+            jq '.fivett = "5tt/5tt.nii.gz"' config.json > /tmp/cfg.json && mv /tmp/cfg.json config.json
+        else
+            echo "[main] Computing 5TT with brainlife/mrtrix3:3.0.0"
+            mkdir -p work 5tt
+            singularity exec -e \
+                --bind "$(pwd)":/app \
+                --pwd /app \
+                docker://brainlife/mrtrix3:3.0.0 \
+                bash -c "
+                    mrconvert ${T1} work/t1.mif -force -nthreads ${NTHREADS} && \
+                    5ttgen fsl work/t1.mif work/5tt.mif \
+                        -nocrop -sgm_amyg_hipp \
+                        -scratch ./tmp \
+                        -nthreads ${NTHREADS} \
+                        -force && \
+                    5tt2gmwmi work/5tt.mif work/gmwmi.mif -force && \
+                    5tt2vis work/5tt.mif work/5ttvis.mif -force && \
+                    mrconvert work/5tt.mif    -stride 1,2,3,4 5tt/5tt.nii.gz    -force && \
+                    mrconvert work/5ttvis.mif -stride 1,2,3,4 5tt/5ttvis.nii.gz -force
+                "
+            jq '.fivett = "5tt/5tt.nii.gz"' config.json > /tmp/cfg.json && mv /tmp/cfg.json config.json
+            echo "[main] 5TT written to 5tt/5tt.nii.gz"
+        fi
+    fi
+else
+    echo "[main] Tractogram mode — skipping 5ttgen"
+fi
+
+singularity exec -e \
+    docker://gamorosino/app-optic-radiation-track:v1.1 \
+    python main.py
+
+# Generate product.json with QC images embedded as base64
+bash generate_product_json.sh --compress QC product.json
+
+# Generate figures manifest for Brainlife UI
+bash generate_figures_manifest.sh QC .
