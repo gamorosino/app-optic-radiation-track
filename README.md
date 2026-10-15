@@ -1,6 +1,6 @@
-# app-optic-radiation-track
+# Optic Radiation Tracking and Retinotopic Segmentation
 
-**Optic Radiation Tracking and Retinotopic Segmentation** — a reproducible pipeline for tractography and eccentricity-based segmentation of the human optic radiation using population receptive field (pRF) mapping.
+A reproducible pipeline for tractography and eccentricity-based segmentation of the human optic radiation using population receptive field (pRF) mapping.
 
 ---
 
