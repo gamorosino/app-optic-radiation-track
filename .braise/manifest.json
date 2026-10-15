@@ -59,6 +59,15 @@
     }
   ],
   "config": {
+    "dwi":         {"type": "input", "input_id": "dwi",        "file_id": "dwi"},
+    "bvec":        {"type": "input", "input_id": "dwi",        "file_id": "bvecs"},
+    "bval":        {"type": "input", "input_id": "dwi",        "file_id": "bvals"},
+    "t1":          {"type": "input", "input_id": "t1",         "file_id": "t1"},
+    "freesurfer":  {"type": "input", "input_id": "freesurfer", "file_id": "output"},
+    "eccentricity":{"type": "input", "input_id": "prf",        "file_id": "eccentricity"},
+    "varea":       {"type": "input", "input_id": "prf",        "file_id": "varea"},
+    "rois":        {"type": "input", "input_id": "rois",       "file_id": "rois"},
+    "fivett":      {"type": "input", "input_id": "5tt",        "file_id": "mask"},
     "algorithm": {
       "type": "string",
       "default": "iFOD2",
