@@ -11,8 +11,9 @@
     {"id": "t1",         "datatype": "neuro/anat/t1w",   "desc": "T1-weighted anatomical"},
     {"id": "freesurfer", "datatype": "neuro/freesurfer", "desc": "FreeSurfer output directory"},
     {"id": "prf",        "datatype": "neuro/prf",        "desc": "pRF maps (eccentricity + varea as NIfTI)"},
-    {"id": "rois",       "datatype": "neuro/rois",       "desc": "LGN and V1 ROIs"},
-    {"id": "5tt",        "datatype": "neuro/mask",       "datatype_tags": ["5tt"], "desc": "5-tissue-type image (MRtrix3)", "optional": true}
+    {"id": "rois", "datatype": "neuro/rois", "desc": "LGN and V1 ROIs — auto-extracted from thalamic nuclei / varea if absent", "optional": true},
+    {"id": "5tt",  "datatype": "neuro/mask", "datatype_tags": ["5tt"], "desc": "5-tissue-type image — computed from T1 via 5ttgen fsl if absent", "optional": true},
+    {"id": "csd",  "datatype": "neuro/csd",  "desc": "Pre-computed CSD FOD images (lmax2–14) and response — skips dwi2response + dwi2fod if provided", "optional": true}
   ],
   "outputs": [
     {"id": "track",      "datatype": "neuro/track/tck",  "desc": "Whole-brain tractogram (track.tck)"},
@@ -28,6 +29,14 @@
     "varea":       {"type": "input", "input_id": "prf",        "file_id": "varea"},
     "rois":        {"type": "input", "input_id": "rois",       "file_id": "rois"},
     "fivett":      {"type": "input", "input_id": "5tt",        "file_id": "mask"},
+    "response":    {"type": "input", "input_id": "csd",        "file_id": "response"},
+    "lmax2":       {"type": "input", "input_id": "csd",        "file_id": "lmax2"},
+    "lmax4":       {"type": "input", "input_id": "csd",        "file_id": "lmax4"},
+    "lmax6":       {"type": "input", "input_id": "csd",        "file_id": "lmax6"},
+    "lmax8":       {"type": "input", "input_id": "csd",        "file_id": "lmax8"},
+    "lmax10":      {"type": "input", "input_id": "csd",        "file_id": "lmax10"},
+    "lmax12":      {"type": "input", "input_id": "csd",        "file_id": "lmax12"},
+    "lmax14":      {"type": "input", "input_id": "csd",        "file_id": "lmax14"},
     "algorithm":       {"type": "string",  "default": "iFOD2",  "enum": ["iFOD2", "iFOD1", "SD_Stream", "FACT", "Tensor_Det", "Tensor_Prob", "dipy_prob", "dipy_det", "dipy_eudx", "dipy_pft"], "desc": "Tracking algorithm (MRtrix3 or DIPY)"},
     "pft_back_dist":   {"type": "number",  "default": 2,        "desc": "PFT back-tracking distance in mm (dipy_pft only)"},
     "pft_front_dist":  {"type": "number",  "default": 1,        "desc": "PFT front-tracking distance in mm (dipy_pft only)"},

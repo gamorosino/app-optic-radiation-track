@@ -36,13 +36,20 @@
     {
       "id": "rois",
       "datatype": "neuro/rois",
-      "desc": "LGN and V1 ROIs"
+      "desc": "LGN and V1 ROIs — auto-extracted from thalamic nuclei / varea if absent",
+      "optional": true
     },
     {
       "id": "5tt",
       "datatype": "neuro/mask",
       "datatype_tags": ["5tt"],
-      "desc": "5-tissue-type image (MRtrix3)",
+      "desc": "5-tissue-type image — computed from T1 via 5ttgen fsl if absent",
+      "optional": true
+    },
+    {
+      "id": "csd",
+      "datatype": "neuro/csd",
+      "desc": "Pre-computed CSD FOD images (lmax2–14) and response function — skips dwi2response + dwi2fod if provided",
       "optional": true
     }
   ],
@@ -68,6 +75,14 @@
     "varea":       {"type": "input", "input_id": "prf",        "file_id": "varea"},
     "rois":        {"type": "input", "input_id": "rois",       "file_id": "rois"},
     "fivett":      {"type": "input", "input_id": "5tt",        "file_id": "mask"},
+    "response":    {"type": "input", "input_id": "csd",        "file_id": "response"},
+    "lmax2":       {"type": "input", "input_id": "csd",        "file_id": "lmax2"},
+    "lmax4":       {"type": "input", "input_id": "csd",        "file_id": "lmax4"},
+    "lmax6":       {"type": "input", "input_id": "csd",        "file_id": "lmax6"},
+    "lmax8":       {"type": "input", "input_id": "csd",        "file_id": "lmax8"},
+    "lmax10":      {"type": "input", "input_id": "csd",        "file_id": "lmax10"},
+    "lmax12":      {"type": "input", "input_id": "csd",        "file_id": "lmax12"},
+    "lmax14":      {"type": "input", "input_id": "csd",        "file_id": "lmax14"},
     "algorithm": {
       "type": "string",
       "default": "iFOD2",
