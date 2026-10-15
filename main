@@ -1,6 +1,24 @@
 #!/bin/bash
 set -e
 
+# Brainlife stages inputs as relative paths (../task_id/dataset_id/file).
+# Singularity only mounts the current directory, so resolve every file-type
+# config value to an absolute path before any container call.
+for _key in t1 freesurfer fivett tractogram dwi bvec bval eccentricity varea \
+            lgn_lh lgn_rh v1_lh v1_rh rois response \
+            lmax2 lmax4 lmax6 lmax8 lmax10 lmax12 lmax14; do
+    _val=$(jq -r --arg k "$_key" '.[$k] // empty' config.json)
+    if [ -n "$_val" ] && [ -e "$_val" ]; then
+        _abs=$(realpath "$_val")
+        jq --arg k "$_key" --arg v "$_abs" '.[$k] = $v' config.json \
+            > /tmp/_cfg.json && mv /tmp/_cfg.json config.json
+    fi
+done
+
+# Parent directory contains all brainlife input task directories;
+# bind it with the same absolute path inside every singularity call.
+PARENT_DIR=$(realpath ..)
+
 FIVETT=$(jq -r '.fivett // empty' config.json)
 TRACTOGRAM=$(jq -r '.tractogram // empty' config.json)
 T1=$(jq -r '.t1' config.json)
@@ -21,6 +39,7 @@ if [ -z "$LGN_LH" ]; then
         mkdir -p "${WORK_DIR}/freesurfer_subject"
         cp -R "${FREESURFER}"/* "${WORK_DIR}/freesurfer_subject/"
         singularity exec -e \
+            --bind "${PARENT_DIR}:${PARENT_DIR}" \
             --bind "$(pwd)/license.txt:/usr/local/freesurfer/license.txt" \
             --bind "$(pwd)":/app \
             --pwd /app \
@@ -46,6 +65,7 @@ if [ -z "$TRACTOGRAM" ]; then
             echo "[main] Computing 5TT with brainlife/mrtrix3:3.0.0"
             mkdir -p "${WORK_DIR}" "${OUTPUT_DIR}/5tt"
             singularity exec -e \
+                --bind "${PARENT_DIR}:${PARENT_DIR}" \
                 --bind "$(pwd)":/app \
                 --pwd /app \
                 docker://brainlife/mrtrix3:3.0.0 \
@@ -70,8 +90,9 @@ else
 fi
 
 singularity exec -e \
+    --bind "${PARENT_DIR}:${PARENT_DIR}" \
     docker://gamorosino/app-optic-radiation-track:v1.1 \
-    python main.py
+    python3 main.py
 
 # Generate product.json with QC images embedded as base64
 bash generate_product_json.sh --compress QC product.json
