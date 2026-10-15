@@ -6,6 +6,7 @@ Tractography and eccentricity-based segmentation of the human optic radiation.
 
 import json
 import os
+from pathlib import Path
 from pipeline.preprocess import preprocess
 from pipeline.tracking import run_tracking
 from pipeline.segmentation import segment_fibers
@@ -19,8 +20,47 @@ def load_config(path="config.json"):
         return json.load(f)
 
 
+def _resolve_rois_from_dir(rois_dir):
+    """Resolve lgn_lh/rh and v1_lh/rh paths from a neuro/rois directory.
+
+    Reads label.json (list of {name, filename} or {name: filename} dict)
+    when present; falls back to <roi_name>.nii.gz filename convention.
+    Returns a dict with whichever of the four keys were found.
+    """
+    rois_path = Path(rois_dir)
+    if not rois_path.is_dir():
+        return {}
+
+    name_to_file = {}
+    label_json = rois_path.parent / "label.json"
+    if label_json.exists():
+        labels = json.loads(label_json.read_text())
+        if isinstance(labels, list):
+            for entry in labels:
+                name_to_file[entry["name"]] = rois_path / entry["filename"]
+        elif isinstance(labels, dict):
+            for name, filename in labels.items():
+                name_to_file[name] = rois_path / filename
+
+    resolved = {}
+    for roi in ("lgn_lh", "lgn_rh", "v1_lh", "v1_rh"):
+        if roi in name_to_file and name_to_file[roi].exists():
+            resolved[roi] = str(name_to_file[roi])
+        else:
+            for candidate in (f"{roi}.nii.gz", f"{roi}.nii"):
+                p = rois_path / candidate
+                if p.exists():
+                    resolved[roi] = str(p)
+                    break
+    return resolved
+
+
 def main():
     config = load_config()
+
+    # Resolve individual ROI paths: brainlife passes a rois/ directory;
+    # CLI passes lgn_lh/rh and v1_lh/rh directly in config.
+    rois_from_dir = _resolve_rois_from_dir(config["rois"]) if config.get("rois") else {}
 
     # Input paths come from config.json; output paths are fixed locals
     paths = {
@@ -31,10 +71,10 @@ def main():
         "freesurfer":   config["freesurfer"],
         "eccentricity": config["eccentricity"],
         "varea":        config["varea"],
-        "lgn_lh":       config["lgn_lh"],
-        "lgn_rh":       config["lgn_rh"],
-        "v1_lh":        config["v1_lh"],
-        "v1_rh":        config["v1_rh"],
+        "lgn_lh":       config.get("lgn_lh") or rois_from_dir.get("lgn_lh"),
+        "lgn_rh":       config.get("lgn_rh") or rois_from_dir.get("lgn_rh"),
+        "v1_lh":        config.get("v1_lh")  or rois_from_dir.get("v1_lh"),
+        "v1_rh":        config.get("v1_rh")  or rois_from_dir.get("v1_rh"),
         "fivett":       config.get("fivett"),
     }
 
