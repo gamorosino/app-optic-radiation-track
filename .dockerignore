@@ -1,0 +1,24 @@
+.git
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+
+# Intermediate and output directories
+work*/
+output*/
+input*/
+5tt/
+track/
+wmc/
+tcks*/
+figures/
+QC/
+test/
+tmp/
+license.txt
+
+# Large data files
+*.mif
+*.trk
+*.tck

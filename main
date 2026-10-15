@@ -8,6 +8,8 @@ FREESURFER=$(jq -r '.freesurfer' config.json)
 NTHREADS=$(jq -r '.nthreads // 1' config.json)
 FORCE=$(jq -r '.force // false' config.json)
 LGN_LH=$(jq -r '.lgn_lh // empty' config.json)
+WORK_DIR=$(jq -r '.work_dir // "work"' config.json)
+OUTPUT_DIR=$(jq -r '.output_dir // "."' config.json)
 
 # Auto-run thalamic nuclei segmentation if LGN ROIs are not provided
 if [ -z "$LGN_LH" ]; then
@@ -16,16 +18,16 @@ if [ -z "$LGN_LH" ]; then
         echo "[main] ThalamicNuclei.v12.T1.FSvoxelSpace.mgz not found — running segmentThalamicNuclei.sh"
         [ -z "$FREESURFER_LICENSE" ] && echo "[ERROR] FREESURFER_LICENSE env var not set" && exit 1
         cat "$FREESURFER_LICENSE" > license.txt
-        mkdir -p work/freesurfer_subject
-        cp -R "${FREESURFER}"/* work/freesurfer_subject/
+        mkdir -p "${WORK_DIR}/freesurfer_subject"
+        cp -R "${FREESURFER}"/* "${WORK_DIR}/freesurfer_subject/"
         singularity exec -e \
             --bind "$(pwd)/license.txt:/usr/local/freesurfer/license.txt" \
             --bind "$(pwd)":/app \
             --pwd /app \
             docker://brainlife/freesurfer:7.1.0 \
-            bash -c "SUBJECTS_DIR=/app/work segmentThalamicNuclei.sh freesurfer_subject /app/work"
+            bash -c "SUBJECTS_DIR=/app/${WORK_DIR} segmentThalamicNuclei.sh freesurfer_subject /app/${WORK_DIR}"
         # Copy the result back into the freesurfer directory
-        cp work/freesurfer_subject/mri/ThalamicNuclei.v12.T1.FSvoxelSpace.mgz \
+        cp "${WORK_DIR}/freesurfer_subject/mri/ThalamicNuclei.v12.T1.FSvoxelSpace.mgz" \
            "${FREESURFER}/mri/ThalamicNuclei.v12.T1.FSvoxelSpace.mgz"
         echo "[main] Thalamic nuclei segmentation done"
     else
@@ -36,30 +38,31 @@ fi
 # 5TT is not needed in tractogram mode (no ACT tracking)
 if [ -z "$TRACTOGRAM" ]; then
     if [ -z "$FIVETT" ] || [ "$FORCE" == "true" ]; then
-        if [ -f "5tt/5tt.nii.gz" ] && [ "$FORCE" != "true" ]; then
-            echo "[main] Skipping 5ttgen (5tt/5tt.nii.gz exists)"
-            jq '.fivett = "5tt/5tt.nii.gz"' config.json > /tmp/cfg.json && mv /tmp/cfg.json config.json
+        FIVETT_OUT="${OUTPUT_DIR}/5tt/5tt.nii.gz"
+        if [ -f "${FIVETT_OUT}" ] && [ "$FORCE" != "true" ]; then
+            echo "[main] Skipping 5ttgen (${FIVETT_OUT} exists)"
+            jq --arg p "${FIVETT_OUT}" '.fivett = $p' config.json > /tmp/cfg.json && mv /tmp/cfg.json config.json
         else
             echo "[main] Computing 5TT with brainlife/mrtrix3:3.0.0"
-            mkdir -p work 5tt
+            mkdir -p "${WORK_DIR}" "${OUTPUT_DIR}/5tt"
             singularity exec -e \
                 --bind "$(pwd)":/app \
                 --pwd /app \
                 docker://brainlife/mrtrix3:3.0.0 \
                 bash -c "
-                    mrconvert ${T1} work/t1.mif -force -nthreads ${NTHREADS} && \
-                    5ttgen fsl work/t1.mif work/5tt.mif \
+                    mrconvert ${T1} ${WORK_DIR}/t1.mif -force -nthreads ${NTHREADS} && \
+                    5ttgen fsl ${WORK_DIR}/t1.mif ${WORK_DIR}/5tt.mif \
                         -nocrop -sgm_amyg_hipp \
-                        -scratch ./tmp \
+                        -scratch ${WORK_DIR}/tmp \
                         -nthreads ${NTHREADS} \
                         -force && \
-                    5tt2gmwmi work/5tt.mif work/gmwmi.mif -force && \
-                    5tt2vis work/5tt.mif work/5ttvis.mif -force && \
-                    mrconvert work/5tt.mif    -stride 1,2,3,4 5tt/5tt.nii.gz    -force && \
-                    mrconvert work/5ttvis.mif -stride 1,2,3,4 5tt/5ttvis.nii.gz -force
+                    5tt2gmwmi ${WORK_DIR}/5tt.mif ${WORK_DIR}/gmwmi.mif -force && \
+                    5tt2vis   ${WORK_DIR}/5tt.mif ${WORK_DIR}/5ttvis.mif -force && \
+                    mrconvert ${WORK_DIR}/5tt.mif    -stride 1,2,3,4 ${FIVETT_OUT}                  -force && \
+                    mrconvert ${WORK_DIR}/5ttvis.mif -stride 1,2,3,4 ${OUTPUT_DIR}/5tt/5ttvis.nii.gz -force
                 "
-            jq '.fivett = "5tt/5tt.nii.gz"' config.json > /tmp/cfg.json && mv /tmp/cfg.json config.json
-            echo "[main] 5TT written to 5tt/5tt.nii.gz"
+            jq --arg p "${FIVETT_OUT}" '.fivett = $p' config.json > /tmp/cfg.json && mv /tmp/cfg.json config.json
+            echo "[main] 5TT written to ${FIVETT_OUT}"
         fi
     fi
 else

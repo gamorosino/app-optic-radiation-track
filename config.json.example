@@ -1,0 +1,10 @@
+{
+  "algorithm": "iFOD2",
+  "pft_back_dist": 2,
+  "pft_front_dist": 1,
+  "pft_particles": 15,
+  "pft_max_cross": 1,
+  "n_streamlines": 5000,
+  "sift2": true,
+  "clean_streamlines": true
+}

@@ -1,0 +1,31 @@
+{
+  "name": "app-optic-radiation-tract",
+  "description": "Tractography and eccentricity-based segmentation of the human optic radiation using pRF maps. Supports MRtrix3 (default) or DIPY tracking.",
+  "doi": "",
+  "tags": ["tractography", "optic-radiation", "visual-cortex", "prf", "white-matter"],
+  "citation": "",
+  "github": "gamorosino/app-optic-radiation-track",
+  "brainlife": true,
+  "inputs": [
+    {"id": "dwi",        "datatype": "neuro/dwi",        "desc": "DWI data (dwi.nii.gz + bvec + bval)"},
+    {"id": "t1",         "datatype": "neuro/anat/t1w",   "desc": "T1-weighted anatomical"},
+    {"id": "freesurfer", "datatype": "neuro/freesurfer", "desc": "FreeSurfer output directory"},
+    {"id": "prf",        "datatype": "neuro/prf",        "desc": "pRF maps (eccentricity + varea as NIfTI)"},
+    {"id": "rois",       "datatype": "neuro/rois",       "desc": "LGN and V1 ROIs"},
+    {"id": "5tt",        "datatype": "neuro/mask",       "datatype_tags": ["5tt"], "desc": "5-tissue-type image (MRtrix3)", "optional": true}
+  ],
+  "outputs": [
+    {"id": "track",      "datatype": "neuro/track/tck",  "desc": "Whole-brain tractogram (track.tck)"},
+    {"id": "wmc",        "datatype": "neuro/wmc",        "desc": "White matter classification (classification.mat + tracts/*.json)"}
+  ],
+  "config": {
+    "algorithm":       {"type": "string",  "default": "iFOD2",  "enum": ["iFOD2", "iFOD1", "SD_Stream", "FACT", "Tensor_Det", "Tensor_Prob", "dipy_prob", "dipy_det", "dipy_eudx", "dipy_pft"], "desc": "Tracking algorithm (MRtrix3 or DIPY)"},
+    "pft_back_dist":   {"type": "number",  "default": 2,        "desc": "PFT back-tracking distance in mm (dipy_pft only)"},
+    "pft_front_dist":  {"type": "number",  "default": 1,        "desc": "PFT front-tracking distance in mm (dipy_pft only)"},
+    "pft_particles":   {"type": "integer", "default": 15,       "desc": "Number of particles per streamline (dipy_pft only)"},
+    "pft_max_cross":   {"type": "integer", "default": 1,        "desc": "Max number of crossings per voxel (dipy_pft only)"},
+    "n_streamlines":        {"type": "integer", "default": 5000,     "desc": "Target number of streamlines"},
+    "sift2":           {"type": "boolean", "default": true,     "desc": "Apply SIFT2 weights (MRtrix only)"},
+    "clean_streamlines":    {"type": "boolean", "default": true,     "desc": "Apply anatomical fiber cleaning"}
+  }
+}

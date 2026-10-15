@@ -1,0 +1,8 @@
+nibabel>=5.0
+numpy>=1.24
+scipy>=1.10
+nilearn>=0.10
+dipy>=1.7
+pyAFQ>=1.3
+fury>=0.9
+tqdm>=4.65

@@ -37,15 +37,20 @@ Required inputs (dwi OR csd required):
 
 Tracking options:
   --tractogram PATH     Pre-computed whole-brain tractogram (.tck); skips tckgen entirely
-  --tracking_method STR Tracking backend: mrtrix (default) or dipy
+  --algorithm STR       Tracking algorithm (default: iFOD2)
+                          MRtrix3: iFOD2, iFOD1, SD_Stream, FACT, Tensor_Det, Tensor_Prob
+                          DIPY   : dipy_prob, dipy_det, dipy_eudx
   --seed_based          Seed from LGN, include V1 as waypoint (default: true)
   --no_seed_based       Whole-brain ACT tracking, filter afterward
-  --n_fibers N          Target number of streamlines (default: 50000)
-  --fod_algorithm STR   MRtrix3 algorithm (default: iFOD2)
+  --n_streamlines N          Target number of streamlines (default: 50000)
   --seed_dynamic        Use dynamic seeding (default: true)
   --no_seed_dynamic     Disable dynamic seeding
   --sift2               Apply SIFT2 weights (default: true)
   --no_sift2            Disable SIFT2
+  --pft_back_dist N     PFT back-tracking distance in mm (default: 2, dipy_pft only)
+  --pft_front_dist N    PFT front-tracking distance in mm (default: 1, dipy_pft only)
+  --pft_particles N     Particles per streamline (default: 15, dipy_pft only)
+  --pft_max_cross N     Max crossings per voxel (default: 1, dipy_pft only)
   --step_size N         Tracking step size in mm (default: 0.2)
   --max_angle N         Maximum turning angle in degrees (default: 45)
   --min_length N        Minimum streamline length in mm (default: 10)
@@ -54,16 +59,17 @@ Tracking options:
 Segmentation options:
   --hemispheres STR     Hemispheres to process, comma-separated (default: lh,rh)
   --ecc_bins STR        Eccentricity intervals as lo-hi pairs, e.g. "0-3,3-7,15-30,30-90" (default: 0-3,3-7,7-15,15-30,30-50,50-90)
-  --clean_fibers        Apply iterative fiber cleaning (default: true)
-  --no_clean_fibers     Disable fiber cleaning
+  --clean_streamlines        Apply iterative fiber cleaning (default: true)
+  --no_clean_streamlines     Disable fiber cleaning
   --clean_max_iter N    Maximum cleaning iterations (default: 5)
-  --clean_min_fibers N  Minimum fibers before stopping cleaning (default: 10)
+  --clean_min_streamlines N  Minimum fibers before stopping cleaning (default: 10)
 
 5ttgen options (used only when --fivett is not provided):
   --nthreads N          Number of threads for MRtrix3 commands (default: 1)
 
 Other:
   --output_dir PATH     Root directory for all outputs (default: . — use for local runs)
+  --work_dir PATH       Directory for intermediate files (default: work inside output_dir)
   --force               Recompute all intermediate files (default: skip existing)
   -h, --help            Show this help and exit
 EOF
@@ -84,24 +90,28 @@ lmax10=""; lmax12=""; lmax14=""
 lmax=""
 
 tractogram=""
-tracking_method="mrtrix"
+algorithm="iFOD2"
 seed_based=true
-n_fibers=5000
-fod_algorithm="iFOD2"
+n_streamlines=5000
 seed_dynamic=true
 sift2=false
 step_size=0.5
+pft_back_dist=2
+pft_front_dist=1
+pft_particles=15
+pft_max_cross=1
 max_angle=45
 min_length=10
 max_length=250
 
 hemispheres="lh,rh"
 ecc_bins="0-3,3-7,7-15,15-30,30-50,50-90"
-clean_fibers=false
+clean_streamlines=false
 clean_max_iter=5
-clean_min_fibers=10
+clean_min_streamlines=10
 premask=false
 output_dir="."
+work_dir=""
 nthreads=1
 force=false
 
@@ -133,27 +143,31 @@ while [[ $# -gt 0 ]]; do
         --lmax14)           lmax14="$2";   shift 2 ;;
         --lmax)             lmax="$2";     shift 2 ;;
         --tractogram)       tractogram="$2";        shift 2 ;;
-        --tracking_method)  tracking_method="$2";  shift 2 ;;
+        --algorithm)        algorithm="$2";        shift 2 ;;
         --seed_based)       seed_based=true;       shift   ;;
         --no_seed_based)    seed_based=false;      shift   ;;
-        --n_fibers)         n_fibers="$2";         shift 2 ;;
-        --fod_algorithm)    fod_algorithm="$2";    shift 2 ;;
+        --n_streamlines)    n_streamlines="$2";    shift 2 ;;
         --seed_dynamic)     seed_dynamic=true;     shift   ;;
         --no_seed_dynamic)  seed_dynamic=false;    shift   ;;
         --sift2)            sift2=true;            shift   ;;
         --no_sift2)         sift2=false;           shift   ;;
+        --pft_back_dist)    pft_back_dist="$2";    shift 2 ;;
+        --pft_front_dist)   pft_front_dist="$2";   shift 2 ;;
+        --pft_particles)    pft_particles="$2";    shift 2 ;;
+        --pft_max_cross)    pft_max_cross="$2";    shift 2 ;;
         --step_size)        step_size="$2";        shift 2 ;;
         --max_angle)        max_angle="$2";        shift 2 ;;
         --min_length)       min_length="$2";       shift 2 ;;
         --max_length)       max_length="$2";       shift 2 ;;
         --hemispheres)      hemispheres="$2";      shift 2 ;;
         --ecc_bins)         ecc_bins="$2";         shift 2 ;;
-        --clean_fibers)     clean_fibers=true;     shift   ;;
-        --no_clean_fibers)  clean_fibers=false;    shift   ;;
+        --clean_streamlines)     clean_streamlines=true;     shift   ;;
+        --no_clean_streamlines)  clean_streamlines=false;    shift   ;;
         --clean_max_iter)   clean_max_iter="$2";   shift 2 ;;
-        --clean_min_fibers) clean_min_fibers="$2"; shift 2 ;;
+        --clean_min_streamlines) clean_min_streamlines="$2"; shift 2 ;;
         --premask)          premask=true;          shift   ;;
         --output_dir)       output_dir="$2";        shift 2 ;;
+        --work_dir)         work_dir="$2";          shift 2 ;;
         --nthreads)         nthreads="$2";         shift 2 ;;
         --force)            force=true;            shift   ;;
         -h|--help)          usage; exit 0 ;;
@@ -222,24 +236,28 @@ config=$(jq -n \
     --argjson lmax12    "$(json_str "$lmax12")" \
     --argjson lmax14    "$(json_str "$lmax14")" \
     --argjson lmax      "$(json_str "$lmax")" \
-    --argjson tractogram      "$(json_str "$tractogram")" \
-    --argjson tracking_method "$(json_str "$tracking_method")" \
-    --argjson seed_based      "$(json_bool "$seed_based")" \
-    --argjson n_fibers       "$n_fibers" \
-    --argjson fod_algorithm  "$(json_str "$fod_algorithm")" \
-    --argjson seed_dynamic   "$(json_bool "$seed_dynamic")" \
+    --argjson tractogram  "$(json_str "$tractogram")" \
+    --argjson algorithm   "$(json_str "$algorithm")" \
+    --argjson seed_based  "$(json_bool "$seed_based")" \
+    --argjson n_streamlines "$n_streamlines" \
+    --argjson seed_dynamic "$(json_bool "$seed_dynamic")" \
     --argjson sift2          "$(json_bool "$sift2")" \
+    --argjson pft_back_dist  "$pft_back_dist" \
+    --argjson pft_front_dist "$pft_front_dist" \
+    --argjson pft_particles  "$pft_particles" \
+    --argjson pft_max_cross  "$pft_max_cross" \
     --argjson step_size      "$step_size" \
     --argjson max_angle      "$max_angle" \
     --argjson min_length     "$min_length" \
     --argjson max_length     "$max_length" \
     --argjson hemispheres    "$hemi_array" \
     --argjson ecc_bins       "$(json_str "$ecc_bins")" \
-    --argjson clean_fibers   "$(json_bool "$clean_fibers")" \
+    --argjson clean_streamlines   "$(json_bool "$clean_streamlines")" \
     --argjson clean_max_iter "$clean_max_iter" \
-    --argjson clean_min_fibers "$clean_min_fibers" \
+    --argjson clean_min_streamlines "$clean_min_streamlines" \
     --argjson premask        "$(json_bool "$premask")" \
     --argjson output_dir     "$(json_str "$output_dir")" \
+    --argjson work_dir       "$(json_str "${work_dir:-${output_dir}/work}")" \
     --argjson nthreads       "$nthreads" \
     --argjson force          "$(json_bool "$force")" \
     '{
@@ -264,24 +282,28 @@ config=$(jq -n \
         lmax12:    $lmax12,
         lmax14:    $lmax14,
         lmax:      $lmax,
-        tractogram:       $tractogram,
-        tracking_method:  $tracking_method,
-        seed_based:       $seed_based,
-        n_fibers:         $n_fibers,
-        fod_algorithm:    $fod_algorithm,
-        seed_dynamic:     $seed_dynamic,
+        tractogram:    $tractogram,
+        algorithm:     $algorithm,
+        seed_based:    $seed_based,
+        n_streamlines: $n_streamlines,
+        seed_dynamic:  $seed_dynamic,
         sift2:            $sift2,
+        pft_back_dist:    $pft_back_dist,
+        pft_front_dist:   $pft_front_dist,
+        pft_particles:    $pft_particles,
+        pft_max_cross:    $pft_max_cross,
         step_size:        $step_size,
         max_angle:        $max_angle,
         min_length:       $min_length,
         max_length:       $max_length,
         hemispheres:      $hemispheres,
         ecc_bins:         $ecc_bins,
-        clean_fibers:     $clean_fibers,
+        clean_streamlines:     $clean_streamlines,
         clean_max_iter:   $clean_max_iter,
-        clean_min_fibers: $clean_min_fibers,
+        clean_min_streamlines: $clean_min_streamlines,
         premask:          $premask,
         output_dir:       $output_dir,
+        work_dir:         $work_dir,
         nthreads:         $nthreads,
         force:            $force
     }'

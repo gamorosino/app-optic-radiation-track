@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# brainlife.io runtime -- staged by the orchestrator before run, never commit
+config.json
+
+# local test outputs and working dirs
+output/
+output_old/
+work/
+work_old/
+tcks/
+tcks_old/
+5tt/
+track/
+wmc/
+out_dir/
+
+# product outputs written at runtime
+product.json
+figures/

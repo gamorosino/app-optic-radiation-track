@@ -96,11 +96,14 @@ All parameters are provided via `config.json` (or via CLI flags in `main_cli.sh`
 | Field             | Type    | Default                    | Description                                      |
 |-------------------|---------|----------------------------|--------------------------------------------------|
 | `tractogram`      | string  | `null`                     | Pre-computed tractogram; skips tckgen entirely   |
-| `tracking_method` | string  | `"mrtrix"`                 | `"mrtrix"` or `"dipy"`                           |
+| `algorithm`       | string  | `"iFOD2"`                  | Tracking algorithm — MRtrix3: `iFOD2`, `iFOD1`, `SD_Stream`, `FACT`, `Tensor_Det`, `Tensor_Prob`; DIPY: `dipy_prob`, `dipy_det`, `dipy_eudx`, `dipy_pft` |
 | `seed_based`      | boolean | `true`                     | Seed from LGN, include V1 as waypoint            |
-| `n_fibers`        | integer | `50000`                    | Target number of streamlines                     |
-| `fod_algorithm`   | string  | `"iFOD2"`                  | MRtrix3 tracking algorithm                       |
-| `sift2`           | boolean | `false`                    | Apply SIFT2 streamline weighting                 |
+| `n_streamlines`        | integer | `50000`                    | Target number of streamlines per hemisphere                     |
+| `sift2`           | boolean | `false`                    | Apply SIFT2 streamline weighting (MRtrix3 only)  |
+| `pft_back_dist`  | number  | `2`                       | PFT back-tracking distance in mm (`dipy_pft` only) |
+| `pft_front_dist` | number  | `1`                       | PFT front-tracking distance in mm (`dipy_pft` only) |
+| `pft_particles`  | integer | `15`                      | Particles per streamline (`dipy_pft` only)      |
+| `pft_max_cross`  | integer | `1`                       | Max crossings per voxel (`dipy_pft` only)       |
 | `step_size`       | number  | `0.5`                      | Tracking step size (mm)                          |
 | `max_angle`       | number  | `45`                       | Maximum turning angle (degrees)                  |
 | `min_length`      | number  | `10`                       | Minimum streamline length (mm)                   |
@@ -108,9 +111,9 @@ All parameters are provided via `config.json` (or via CLI flags in `main_cli.sh`
 | `ecc_bins`        | string  | `"0-3,3-7,7-15,15-30,30-50,50-90"` | Eccentricity intervals as `lo-hi` pairs |
 | `ends_only`       | boolean | `true`                     | Match ROIs at streamline endpoints only          |
 | `hemispheres`     | array   | `["lh","rh"]`              | Hemispheres to process                           |
-| `clean_fibers`    | boolean | `true`                     | Apply iterative MAD-based fiber cleaning         |
+| `clean_streamlines`    | boolean | `true`                     | Apply iterative MAD-based fiber cleaning         |
 | `clean_max_iter`  | integer | `5`                        | Maximum cleaning iterations                      |
-| `clean_min_fibers`| integer | `10`                       | Minimum fibers before stopping cleaning          |
+| `clean_min_streamlines`| integer | `10`                       | Minimum fibers before stopping cleaning          |
 | `nthreads`        | integer | `1`                        | Number of threads for MRtrix3                    |
 | `force`           | boolean | `false`                    | Recompute all intermediate files                 |
 

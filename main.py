@@ -38,9 +38,12 @@ def main():
         "fivett":       config.get("fivett"),
     }
 
-    out = config.get("output_dir", ".")
+    out      = config.get("output_dir", ".")
+    work_dir = config.get("work_dir", "work")
     paths["out_track"] = os.path.join(out, "track", "track.tck")
     paths["out_wmc"]   = os.path.join(out, "wmc")
+
+    os.makedirs(work_dir, exist_ok=True)
 
     # Reference image for voxel space: DWI if available, else highest lmax
     lmax_files = {int(k[4:]): v for k, v in config.items()
@@ -61,7 +64,7 @@ def main():
     print("[1/5] Preprocessing: resampling FreeSurfer volumes to diffusion space")
     prep = preprocess(paths, config)
 
-    print("[2/5] Fiber tracking:", config["tracking_method"])
+    print("[2/5] Fiber tracking:", config.get("algorithm", "iFOD2"))
     run_tracking(paths, prep, config)
 
     print("[3/5] Fiber segmentation (optic radiation isolation)")
