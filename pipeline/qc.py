@@ -99,13 +99,13 @@ def _render_slice(anat, density, axis, idx, out_path, title):
 
     vmin, vmax = np.percentile(anat_slice[anat_slice > 0], [1, 99]) \
         if anat_slice.max() > 0 else (0, 1)
-    ax.imshow(anat_slice, cmap="gray", origin="lower", vmin=vmin, vmax=vmax)
+    ax.imshow(anat_slice, cmap="gray", origin="upper", vmin=vmin, vmax=vmax)
 
     if dens_slice.max() > 0:
         cmap_overlay = plt.cm.hot
         rgba = cmap_overlay(dens_slice)
         rgba[..., 3] = np.where(dens_slice > 0.01, 0.65, 0.0)
-        ax.imshow(rgba, origin="lower")
+        ax.imshow(rgba, origin="upper")
 
     ax.set_title(title.capitalize(), color="white", fontsize=10, pad=3)
     ax.axis("off")
