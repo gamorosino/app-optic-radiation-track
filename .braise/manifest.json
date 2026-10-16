@@ -63,6 +63,11 @@
       "id": "wmc",
       "datatype": "neuro/wmc",
       "desc": "White matter classification (classification.mat + tracts/*.json)"
+    },
+    {
+      "id": "tcks",
+      "datatype": "neuro/tcks",
+      "desc": "Per-eccentricity per-hemisphere optic radiation tracts (tcks/ + tcks.json)"
     }
   ],
   "config": {

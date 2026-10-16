@@ -91,7 +91,7 @@ fi
 
 singularity exec -e \
     --bind "${PARENT_DIR}:${PARENT_DIR}" \
-    docker://gamorosino/app-optic-radiation-track:v1.1 \
+    docker://gamorosino/app-optic-radiation-track:v1.2 \
     python3 main.py
 
 # Generate product.json with QC images embedded as base64

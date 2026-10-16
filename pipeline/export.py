@@ -48,6 +48,15 @@ def export_results(classification, paths, config):
                                 if sft.streamlines else np.zeros((0, 3)))
             tract_index += 1
 
+    # tcks.json — index file required by neuro/tcks datatype
+    tcks_meta = [
+        {"name": n, "filename": f"{n}.tck", "nfibers": fiber_counts[n]}
+        for n in tract_names
+    ]
+    with open(os.path.join(out, "tcks.json"), "w") as f:
+        json.dump(tcks_meta, f, indent=2)
+    print(f"  tcks.json written to {os.path.join(out, 'tcks.json')}")
+
     # classification.mat  (mirrors MATLAB wmc structure)
     _save_classification_mat(
         os.path.join(wmc_dir, "classification.mat"),

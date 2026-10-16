@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:24.1.2-0
+FROM continuumio/miniconda3:24.9.2-0
 
 # System libraries needed by nilearn, fury, OpenGL
 RUN apt-get update && apt-get install -y --no-install-recommends \

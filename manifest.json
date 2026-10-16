@@ -17,7 +17,8 @@
   ],
   "outputs": [
     {"id": "track",      "datatype": "neuro/track/tck",  "desc": "Whole-brain tractogram (track.tck)"},
-    {"id": "wmc",        "datatype": "neuro/wmc",        "desc": "White matter classification (classification.mat + tracts/*.json)"}
+    {"id": "wmc",        "datatype": "neuro/wmc",        "desc": "White matter classification (classification.mat + tracts/*.json)"},
+    {"id": "tcks",       "datatype": "neuro/tcks",       "desc": "Per-eccentricity per-hemisphere optic radiation tracts (tcks/ + tcks.json)"}
   ],
   "config": {
     "dwi":         {"type": "input", "input_id": "dwi",        "file_id": "dwi"},
