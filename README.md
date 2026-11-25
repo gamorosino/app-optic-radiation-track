@@ -1,5 +1,60 @@
 # Optic Radiation Tracking and Retinotopic Segmentation
 
+<!-- brainlife-app:begin (generated from the App manifest; edit the manifest, not this block) -->
+
+> **Optic Radiation Tracking and Retinotopic Segmentation — a reproducible pipeline for tractography and eccentricity-based segmentation of the human optic radiation using population receptive field (pRF) mapping.**
+
+Tracks the optic radiation (seed-based from LGN to V1, whole-brain ACT, or from a precomputed tractogram) with MRtrix3 or DIPY, isolates LGN-V1 fibres with tckedit and classifies them into eccentricity bands from pRF maps. LGN and V1 ROIs, 5TT and CSD are computed automatically when not provided (thalamic nuclei via FreeSurfer 7.1.0). Use it for retinotopic segmentation of the optic radiation; needs DWI, T1w, FreeSurfer and pRF eccentricity/visual-area maps.
+
+| | |
+|---|---|
+| 📥 **Inputs** | `neuro/dwi` · `neuro/anat/t1w` · `neuro/freesurfer` · `neuro/prf` · `neuro/rois` (optional) · `neuro/mask` (optional) · `neuro/csd` (optional) |
+| 📤 **Outputs** | `neuro/track/tck` · `neuro/wmc` · `neuro/tcks` |
+| 🐳 **Container** | `brainlife/freesurfer:7.1.0` |
+| 🔑 **Requires** | `FREESURFER_LICENSE` |
+| 🔗 **Run it** | [doi.org/10.25663/brainlife.app.989](https://doi.org/10.25663/brainlife.app.989) |
+
+#### 📥 Inputs
+
+| Input | Datatype | Required | Description |
+|---|---|---|---|
+| `dwi` | `neuro/dwi` | yes | DWI data (dwi.nii.gz + bvec + bval) |
+| `t1` | `neuro/anat/t1w` | yes | T1-weighted anatomical |
+| `freesurfer` | `neuro/freesurfer` | yes | FreeSurfer output directory |
+| `prf` | `neuro/prf` | yes | pRF maps (eccentricity + varea as NIfTI) |
+| `rois` | `neuro/rois` | no | LGN and V1 ROIs — auto-extracted from thalamic nuclei / varea if absent |
+| `5tt` | `neuro/mask` (5tt) | no | 5-tissue-type image — computed from T1 via 5ttgen fsl if absent |
+| `csd` | `neuro/csd` | no | Pre-computed CSD FOD images (lmax2–14) and response function — skips dwi2response + dwi2fod if provided |
+
+#### 📤 Outputs
+
+| Output | Datatype | Description |
+|---|---|---|
+| `track` | `neuro/track/tck` | Whole-brain tractogram (track.tck) |
+| `wmc` | `neuro/wmc` | White matter classification (classification.mat + tracts/*.json) |
+| `tcks` | `neuro/tcks` | Per-eccentricity per-hemisphere optic radiation tracts (tcks/ + tcks.json) |
+
+<details>
+<summary><b>⚙️ Parameters</b> (8)</summary>
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `algorithm` | string | `iFOD2` | Tracking algorithm (MRtrix3 or DIPY) |
+| `pft_back_dist` | number | `2` | PFT back-tracking distance in mm (dipy_pft only) |
+| `pft_front_dist` | number | `1` | PFT front-tracking distance in mm (dipy_pft only) |
+| `pft_particles` | integer | `15` | Number of particles per streamline (dipy_pft only) |
+| `pft_max_cross` | integer | `1` | Max number of crossings per voxel (dipy_pft only) |
+| `n_streamlines` | integer | `5000` | Target number of streamlines |
+| `sift2` | boolean | `false` | Apply SIFT2 weights (MRtrix only) |
+| `clean_streamlines` | boolean | `false` | Apply anatomical fiber cleaning |
+
+</details>
+
+📚 **References used by this App:**
+- Hayashi S, et al. brainlife.io: a decentralized and open-source cloud platform to support neuroscience research. Nat Methods (2024). [doi:10.1038/s41592-024-02237-2](https://doi.org/10.1038/s41592-024-02237-2)
+
+<!-- brainlife-app:end -->
+
 A reproducible pipeline for tractography and eccentricity-based segmentation of the human optic radiation using population receptive field (pRF) mapping.
 
 ---
